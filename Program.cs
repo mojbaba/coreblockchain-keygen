@@ -15,3 +15,9 @@ var masterExtendedPublicKey = masterExtendedPrivateKey.ToExtendedPublicKey();
 System.Console.WriteLine("Master Extended Public Key: ");
 
 System.Console.WriteLine(((byte[])masterExtendedPublicKey).ToHex());
+
+var privateKey = Xcb.Net.Signer.XcbECKey.GenerateKey(1).GetPrivateKey();
+
+System.Console.WriteLine("Randome Private Key: ");
+
+System.Console.WriteLine(privateKey.ToHex());
