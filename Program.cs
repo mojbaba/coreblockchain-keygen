@@ -1,23 +1,42 @@
-﻿using Xcb.Net.Extensions;
-using Xcb.Net.HDWallet;
+﻿using Sharprompt;
+using Xcb.Net.Extensions;
 
-var masterExtendedPrivateKey = ExtendedPrivateKey.GenerateRandomMaster();
+Xcb.Net.BIP39.Mnemonic24 mnemonicPhrase;
 
-var keyBytes = (byte[])masterExtendedPrivateKey;
+if (Prompt.Select<bool>("Generate new mnemonic?", new[] { true, false }))
+    mnemonicPhrase = Xcb.Net.BIP39.Mnemonic24.GenerateMnemonic();
+else
+    mnemonicPhrase = new Xcb.Net.BIP39.Mnemonic24(Prompt.Input<string>("Enter 24 mnemonic words"));
 
-System.Console.WriteLine("Master Extended Private Key: ");
+mnemonicPhrase = Xcb.Net.BIP39.Mnemonic24.GenerateMnemonic();
 
-System.Console.WriteLine(keyBytes.ToHex());
+var masterExtendedPrivateKey = mnemonicPhrase.ToExtendedPrivateKey();
 
+var hdwallet = new Xcb.Net.HDWallet.PrivateWallet(masterExtendedPrivateKey);
 
-var masterExtendedPublicKey = masterExtendedPrivateKey.ToExtendedPublicKey();
+var derivationPath = "m/44'/654'/0'/0/";
 
-System.Console.WriteLine("Master Extended Public Key: ");
+System.Console.WriteLine("Mnemonic phrase: ");
+System.Console.WriteLine(mnemonicPhrase.Words);
 
-System.Console.WriteLine(((byte[])masterExtendedPublicKey).ToHex());
+System.Console.WriteLine();
 
-var privateKey = Xcb.Net.Signer.XcbECKey.GenerateKey(1).GetPrivateKey();
+var networkId = Prompt.Input<int>("what is the network id? (testnet = 3 , mainnet = 1)");
 
-System.Console.WriteLine("Randome Private Key: ");
+var count = Prompt.Input<uint>("how many addresses you want?");
+System.Console.WriteLine();
 
-System.Console.WriteLine(privateKey.ToHex());
+for (int i = 0; i < count; i++)
+{
+    var mnemonic = derivationPath + $"{i}";
+
+    var privateKey = hdwallet.DerivePrivateWallet(mnemonic).GetExtendedPrivateKey().ToXcbECKey(networkId);
+
+    var address = privateKey.GetAddress();
+
+    System.Console.WriteLine($"the address at {mnemonic} is : {address}");
+    System.Console.WriteLine($"the private key is : {privateKey.GetPrivateKey().ToHex()}");
+
+    System.Console.WriteLine();
+    System.Console.WriteLine();    
+}
